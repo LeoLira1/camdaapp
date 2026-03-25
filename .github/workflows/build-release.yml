@@ -1,0 +1,82 @@
+name: Build & Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão do release (ex: v1.1.0)'
+        required: true
+        default: 'v1.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        working-directory: camda-app
+        run: flutter pub get
+
+      - name: Create .env file
+        working-directory: camda-app
+        run: |
+          echo 'TURSO_DATABASE_URL=${{ secrets.TURSO_DATABASE_URL }}' > .env
+          echo 'TURSO_AUTH_TOKEN=${{ secrets.TURSO_AUTH_TOKEN }}' >> .env
+          echo 'CAMDA_PASSWORD=${{ secrets.CAMDA_PASSWORD }}' >> .env
+
+      - name: Build release APK
+        working-directory: camda-app
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename APKs
+        working-directory: camda-app
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk  dist/camda-app-${VERSION}-arm64.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/camda-app-${VERSION}-arm32.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk      dist/camda-app-${VERSION}-x86_64.apk || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ github.event.inputs.version || github.ref_name }}"
+          name: "CAMDA App ${{ github.event.inputs.version || github.ref_name }}"
+          body: |
+            ## CAMDA Estoque ${{ github.ref_name }}
+
+            ### Download
+            - **arm64-v8a** — Celulares modernos (recomendado para a maioria dos Android)
+            - **armeabi-v7a** — Celulares mais antigos (32-bit)
+
+            ### Novidades nesta versão
+            - Sincronização completa com banco de dados Turso
+            - Suporte offline para todos os módulos (estoque, validade, vendas, lançamentos, pendências)
+            - Fila de sincronização automática ao reconectar
+            - Cache local com TTL de 15 minutos
+          files: camda-app/dist/*.apk
+          draft: false
+          prerelease: false
