@@ -21,7 +21,14 @@ class EstoqueRepository {
   Future<List<Produto>> getAll({String? categoria, String? status}) async {
     var sql = '''
       SELECT codigo, produto, categoria, qtd_sistema, qtd_fisica,
-             diferenca, nota, status, ultima_contagem, criado_em,
+             diferenca, nota,
+             CASE
+               WHEN status IN ('falta', 'sobra') THEN status
+               WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'falta') THEN 'falta'
+               WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'sobra') THEN 'sobra'
+               ELSE status
+             END as status,
+             ultima_contagem, criado_em,
              COALESCE(observacoes, '') as observacoes
       FROM estoque_mestre
     ''';
