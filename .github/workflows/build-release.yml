@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão do release (ex: v1.1.0)'
+        required: true
+        default: 'v1.1.0'
 
 permissions:
   contents: write
@@ -48,7 +54,7 @@ jobs:
       - name: Rename APKs
         working-directory: camda-app
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk  dist/camda-app-${VERSION}-arm64.apk
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/camda-app-${VERSION}-arm32.apk
@@ -57,7 +63,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "CAMDA App ${{ github.ref_name }}"
+          tag_name: "${{ github.event.inputs.version || github.ref_name }}"
+          name: "CAMDA App ${{ github.event.inputs.version || github.ref_name }}"
           body: |
             ## CAMDA Estoque ${{ github.ref_name }}
 
