@@ -18,7 +18,8 @@ class TursoClient {
   static const _fallbackToken = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzA5MjIyMjYsImlkIjoiMWQzNzAwYTQtYzk0ZC00ZTA1LWJlZWQtMTliYTI1NDA4M2I3IiwicmlkIjoiMzMzMDc1MzctMzljYy00YzY5LWI4YTUtZmQ3NDViMTEyMTNjIn0.xHobJm3csz1tw_JrSoktjHgp5GxeQvwGGir6xrDy-YhrmO28RY7POinttER0IKmYgKfxHXY7Fi8Oa_6M5JRxAQ';
 
   String get _baseUrl {
-    var raw = (dotenv.env['TURSO_DATABASE_URL'] ?? _fallbackUrl).trim();
+    var raw = dotenv.env['TURSO_DATABASE_URL']?.trim() ?? '';
+    if (raw.isEmpty) raw = _fallbackUrl;
     // Strip surrounding quotes that may be present in .env files
     if (raw.length >= 2 &&
         ((raw.startsWith('"') && raw.endsWith('"')) ||
@@ -28,7 +29,10 @@ class TursoClient {
     // Turso HTTP API usa https://, mas a URL pode vir como libsql://
     return raw.replaceFirst(RegExp(r'^libsql://'), 'https://');
   }
-  String get _token => dotenv.env['TURSO_AUTH_TOKEN'] ?? _fallbackToken;
+  String get _token {
+    final t = dotenv.env['TURSO_AUTH_TOKEN']?.trim() ?? '';
+    return t.isEmpty ? _fallbackToken : t;
+  }
 
   bool get isConfigured => _baseUrl.isNotEmpty && _token.isNotEmpty;
 
