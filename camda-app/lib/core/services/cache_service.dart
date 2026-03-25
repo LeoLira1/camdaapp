@@ -9,19 +9,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 class CacheService {
   static const int kTtlMinutes = 15;
 
-  static const _kEstoque = 'cache_estoque_v1';
-  static const _kEstoqueTs = 'cache_estoque_ts_v1';
-  static const _kVendas = 'cache_vendas_v1';
-  static const _kVendasTs = 'cache_vendas_ts_v1';
-  static const _kDashboard = 'cache_dashboard_v1';
+  static const _kEstoque    = 'cache_estoque_v1';
+  static const _kEstoqueTs  = 'cache_estoque_ts_v1';
+  static const _kVendas     = 'cache_vendas_v1';
+  static const _kVendasTs   = 'cache_vendas_ts_v1';
+  static const _kDashboard  = 'cache_dashboard_v1';
   static const _kDashboardTs = 'cache_dashboard_ts_v1';
 
-  static const _kContagem = 'cache_contagem_v1';
+  static const _kContagem   = 'cache_contagem_v1';
   static const _kContagemTs = 'cache_contagem_ts_v1';
-  static const _kAvarias = 'cache_avarias_v1';
-  static const _kAvariasTs = 'cache_avarias_ts_v1';
-  static const _kReposicao = 'cache_reposicao_v1';
+  static const _kAvarias    = 'cache_avarias_v1';
+  static const _kAvariasTs  = 'cache_avarias_ts_v1';
+  static const _kReposicao  = 'cache_reposicao_v1';
   static const _kReposicaoTs = 'cache_reposicao_ts_v1';
+
+  static const _kValidade   = 'cache_validade_v1';
+  static const _kValidadeTs = 'cache_validade_ts_v1';
+  static const _kLancamentos   = 'cache_lancamentos_v1';
+  static const _kLancamentosTs = 'cache_lancamentos_ts_v1';
+  static const _kPendencias   = 'cache_pendencias_v1';
+  static const _kPendenciasTs = 'cache_pendencias_ts_v1';
 
   // ─── Estoque ─────────────────────────────────────────────────────────────
 
@@ -158,6 +165,85 @@ class CacheService {
     await saveReposicao(list);
   }
 
+  // ─── Validade ────────────────────────────────────────────────────────────
+
+  static Future<void> saveValidade(List<Map<String, dynamic>> rows) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kValidade, jsonEncode(rows));
+    await prefs.setInt(_kValidadeTs, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  static Future<(List<Map<String, dynamic>>?, bool)> loadValidade() async {
+    return _load(_kValidade, _kValidadeTs);
+  }
+
+  // ─── Lançamentos ─────────────────────────────────────────────────────────
+
+  static Future<void> saveLancamentos(List<Map<String, dynamic>> rows) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLancamentos, jsonEncode(rows));
+    await prefs.setInt(_kLancamentosTs, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  static Future<(List<Map<String, dynamic>>?, bool)> loadLancamentos() async {
+    return _load(_kLancamentos, _kLancamentosTs);
+  }
+
+  /// Atualização otimista: insere lançamento na cache local.
+  static Future<void> insertLancamento(Map<String, dynamic> row) async {
+    final (rows, _) = await loadLancamentos();
+    final list = rows ?? [];
+    list.insert(0, row);
+    await saveLancamentos(list);
+  }
+
+  /// Atualização otimista: remove lançamento da cache local.
+  static Future<void> removeLancamento(int id) async {
+    final (rows, _) = await loadLancamentos();
+    if (rows == null) return;
+    final updated = rows.where((r) => r['id'] != id).toList();
+    await saveLancamentos(updated);
+  }
+
+  // ─── Pendências ───────────────────────────────────────────────────────────
+
+  static Future<void> savePendencias(List<Map<String, dynamic>> rows) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kPendencias, jsonEncode(rows));
+    await prefs.setInt(_kPendenciasTs, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  static Future<(List<Map<String, dynamic>>?, bool)> loadPendencias() async {
+    return _load(_kPendencias, _kPendenciasTs);
+  }
+
+  /// Atualização otimista: insere pendência na cache local.
+  static Future<void> insertPendencia(Map<String, dynamic> row) async {
+    final (rows, _) = await loadPendencias();
+    final list = rows ?? [];
+    list.add(row);
+    await savePendencias(list);
+  }
+
+  /// Atualização otimista: remove pendência da cache local.
+  static Future<void> removePendencia(int id) async {
+    final (rows, _) = await loadPendencias();
+    if (rows == null) return;
+    final updated = rows.where((r) => r['id'] != id).toList();
+    await savePendencias(updated);
+  }
+
+  /// Atualização otimista: atualiza observação de pendência na cache.
+  static Future<void> updatePendenciaObservacao(int id, String observacao) async {
+    final (rows, _) = await loadPendencias();
+    if (rows == null) return;
+    final updated = rows.map((r) {
+      if (r['id'] == id) return {...r, 'observacao': observacao};
+      return r;
+    }).toList();
+    await savePendencias(updated);
+  }
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   static Future<(List<Map<String, dynamic>>?, bool)> _load(
@@ -185,18 +271,19 @@ class CacheService {
 
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kEstoque);
-    await prefs.remove(_kEstoqueTs);
-    await prefs.remove(_kVendas);
-    await prefs.remove(_kVendasTs);
-    await prefs.remove(_kDashboard);
-    await prefs.remove(_kDashboardTs);
-    await prefs.remove(_kContagem);
-    await prefs.remove(_kContagemTs);
-    await prefs.remove(_kAvarias);
-    await prefs.remove(_kAvariasTs);
-    await prefs.remove(_kReposicao);
-    await prefs.remove(_kReposicaoTs);
+    for (final key in [
+      _kEstoque, _kEstoqueTs,
+      _kVendas, _kVendasTs,
+      _kDashboard, _kDashboardTs,
+      _kContagem, _kContagemTs,
+      _kAvarias, _kAvariasTs,
+      _kReposicao, _kReposicaoTs,
+      _kValidade, _kValidadeTs,
+      _kLancamentos, _kLancamentosTs,
+      _kPendencias, _kPendenciasTs,
+    ]) {
+      await prefs.remove(key);
+    }
   }
 
   /// Verifica se existe algum cache válido (não expirado).
