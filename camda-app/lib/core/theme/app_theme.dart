@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 /// Notifier global para alternar entre modo escuro e claro.
@@ -24,12 +25,12 @@ class AppTheme {
     final mutedColor    = isDark ? const Color(0xFF64748B) : const Color(0xFF8A9BB0);
 
     final textTheme = TextTheme(
-      displayLarge: TextStyle(fontFamily: 'Outfit', fontSize: 32, fontWeight: FontWeight.w900, color: onSurface, letterSpacing: -1),
-      displayMedium: TextStyle(fontFamily: 'Outfit', fontSize: 24, fontWeight: FontWeight.w700, color: onSurface),
-      headlineLarge: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.w700, color: onSurface),
-      headlineMedium: TextStyle(fontFamily: 'Outfit', fontSize: 18, fontWeight: FontWeight.w600, color: onSurface),
-      titleLarge: TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.w600, color: onSurface),
-      titleMedium: TextStyle(fontFamily: 'Outfit', fontSize: 14, fontWeight: FontWeight.w500, color: onSurface),
+      displayLarge: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: onSurface, letterSpacing: -1),
+      displayMedium: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w700, color: onSurface),
+      headlineLarge: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, color: onSurface),
+      headlineMedium: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: onSurface),
+      titleLarge: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: onSurface),
+      titleMedium: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: onSurface),
       bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: onSurface),
       bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: onSurfaceVar),
       bodySmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: mutedColor),
@@ -58,7 +59,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: bgColor,
       textTheme: textTheme,
-      fontFamily: 'Outfit',
+      fontFamily: GoogleFonts.outfit().fontFamily,
 
       // AppBar
       appBarTheme: AppBarTheme(
@@ -68,7 +69,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
         centerTitle: false,
-        titleTextStyle: TextStyle(fontFamily: 'Outfit', fontSize: 18, fontWeight: FontWeight.w700, color: onSurface),
+        titleTextStyle: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700, color: onSurface),
       ),
 
       // NavigationBar (bottom)
@@ -83,9 +84,9 @@ class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(fontFamily: 'Outfit', fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.green);
+            return GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.green);
           }
-          return TextStyle(fontFamily: 'Outfit', fontSize: 11, color: mutedColor);
+          return GoogleFonts.outfit(fontSize: 11, color: mutedColor);
         }),
         elevation: 8,
         shadowColor: Colors.black54,
@@ -96,8 +97,8 @@ class AppTheme {
         backgroundColor: surfaceColor,
         selectedIconTheme: const IconThemeData(color: AppColors.green, size: 24),
         unselectedIconTheme: IconThemeData(color: mutedColor, size: 22),
-        selectedLabelTextStyle: const TextStyle(fontFamily: 'Outfit', fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.green),
-        unselectedLabelTextStyle: TextStyle(fontFamily: 'Outfit', fontSize: 12, color: mutedColor),
+        selectedLabelTextStyle: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.green),
+        unselectedLabelTextStyle: GoogleFonts.outfit(fontSize: 12, color: mutedColor),
         indicatorColor: AppColors.green.withOpacity(0.15),
       ),
 
@@ -151,7 +152,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          textStyle: const TextStyle(fontFamily: 'Outfit', fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1),
+          textStyle: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 1),
         ),
       ),
 
@@ -176,8 +177,8 @@ class AppTheme {
           border: Border.all(color: isDark ? const Color(0x597BAFD4) : AppColors.green.withOpacity(0.4)),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-        labelStyle: const TextStyle(fontFamily: 'Outfit', fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontFamily: 'Outfit', fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w500),
         dividerColor: Colors.transparent,
       ),
 
@@ -188,7 +189,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: isDark ? const Color(0x14FFFFFF) : borderColor),
         ),
-        titleTextStyle: TextStyle(fontFamily: 'Outfit', fontSize: 18, fontWeight: FontWeight.w700, color: onSurface),
+        titleTextStyle: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w700, color: onSurface),
         contentTextStyle: TextStyle(fontSize: 14, color: onSurfaceVar),
       ),
 
