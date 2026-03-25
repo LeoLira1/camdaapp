@@ -44,6 +44,9 @@ dependencies:
   # Câmera (para Pendências de Entrega)
   image_picker: ^1.1.2
 
+  # Fontes Google
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -59,9 +62,6 @@ flutter:
     - .env
 
   fonts:
-    - family: Outfit
-      fonts:
-        - asset: assets/fonts/Outfit-Variable.ttf
     - family: JetBrainsMono
       fonts:
         - asset: assets/fonts/JetBrainsMono-Regular.ttf
