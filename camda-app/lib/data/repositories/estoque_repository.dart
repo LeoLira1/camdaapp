@@ -26,6 +26,8 @@ class EstoqueRepository {
                WHEN status IN ('falta', 'sobra') THEN status
                WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'falta') THEN 'falta'
                WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'sobra') THEN 'sobra'
+               WHEN codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia < 0) THEN 'falta'
+               WHEN codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia > 0) THEN 'sobra'
                ELSE status
              END as status,
              ultima_contagem, criado_em,
@@ -40,10 +42,11 @@ class EstoqueRepository {
       args.add(categoria);
     }
     if (status != null && status.isNotEmpty) {
-      // Igual ao Streamlit: inclui produtos com status direto OU com registro
-      // na tabela divergencias (ex: falta de cooperado sem alterar estoque_mestre)
+      // Inclui produtos com status direto OU registro em divergencias OU
+      // divergência registrada na contagem (qtd_divergencia > 0 = sobra, < 0 = falta)
+      final qtdSign = status == 'sobra' ? '> 0' : '< 0';
       conditions.add(
-        "(status = ? OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = ?))"
+        "(status = ? OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = ?) OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia $qtdSign))"
       );
       args.add(status);
       args.add(status);
@@ -126,9 +129,11 @@ class EstoqueRepository {
             SUM(qtd_sistema) as total_itens,
             SUM(CASE WHEN status = 'falta'
                           OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'falta')
+                          OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia < 0)
                      THEN 1 ELSE 0 END) as faltas,
             SUM(CASE WHEN status = 'sobra'
                           OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'sobra')
+                          OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia > 0)
                      THEN 1 ELSE 0 END) as sobras
           FROM estoque_mestre
           $whereClause
