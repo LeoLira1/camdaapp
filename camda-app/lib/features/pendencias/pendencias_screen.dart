@@ -316,23 +316,20 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
   }
 
   Widget _buildGrid() {
-    return GridView.builder(
+    return ListView.builder(
       padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.78,
-      ),
       itemCount: _pendencias.length,
       itemBuilder: (context, i) {
         final p = _pendencias[i];
-        return _PendenciaCard(
-          pendencia: p,
-          diasDesde: _repo.diasDesde(p.dataRegistro),
-          onDelete: () => _deletar(p),
-          onTap: () => _showFoto(p),
-        ).animate().fadeIn(duration: 300.ms, delay: (i * 40).clamp(0, 400).ms);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: _PendenciaCard(
+            pendencia: p,
+            diasDesde: _repo.diasDesde(p.dataRegistro),
+            onDelete: () => _deletar(p),
+            onTap: () => _showFoto(p),
+          ).animate().fadeIn(duration: 300.ms, delay: (i * 60).clamp(0, 400).ms),
+        );
       },
     );
   }
@@ -446,33 +443,38 @@ class _PendenciaCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: borderColor.withOpacity(isAtrasado ? 0.5 : 0.3)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor.withOpacity(isAtrasado ? 0.6 : 0.3), width: isAtrasado ? 2 : 1),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Foto
-          Expanded(
+          SizedBox(
+            height: 220,
+            width: double.infinity,
             child: Stack(fit: StackFit.expand, children: [
               if (bytes != null)
                 Image.memory(bytes, fit: BoxFit.cover)
               else
                 Container(
                   color: AppColors.surfaceVariant,
-                  child: const Icon(Icons.image_outlined, color: AppColors.textMuted, size: 36),
+                  child: const Icon(Icons.image_outlined, color: AppColors.textMuted, size: 56),
                 ),
               // Badge dias
               Positioned(
-                top: 6, right: 6,
+                top: 10, right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
-                    color: (isAtrasado ? AppColors.red : AppColors.blue).withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(10),
+                    color: (isAtrasado ? AppColors.red : AppColors.blue).withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${diasDesde}d',
-                    style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                    style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                 ),
               ),
@@ -480,22 +482,35 @@ class _PendenciaCard extends StatelessWidget {
           ),
           // Info
           Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(pendencia.dataRegistro,
-                  style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 9, color: AppColors.textMuted)),
-              if (pendencia.observacao.isNotEmpty)
-                Text(pendencia.observacao,
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(pendencia.dataRegistro,
+                      style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 12, color: AppColors.textMuted)),
+                  if (pendencia.observacao.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(pendencia.observacao,
+                        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.4)),
+                  ],
+                ]),
+              ),
+              const SizedBox(width: 12),
               GestureDetector(
                 onTap: onDelete,
-                child: const Row(children: [
-                  Icon(Icons.delete_outline, color: AppColors.red, size: 14),
-                  SizedBox(width: 4),
-                  Text('Excluir', style: TextStyle(fontSize: 10, color: AppColors.red)),
-                ]),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.red.withOpacity(0.25)),
+                  ),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.delete_outline, color: AppColors.red, size: 18),
+                    SizedBox(width: 4),
+                    Text('Excluir', style: TextStyle(fontSize: 13, color: AppColors.red, fontWeight: FontWeight.w600)),
+                  ]),
+                ),
               ),
             ]),
           ),
