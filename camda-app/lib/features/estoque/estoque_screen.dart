@@ -409,17 +409,20 @@ class _ProdutoTile extends StatelessWidget {
                 ),
               ],
             ]),
-            if (produto.nota.isNotEmpty)
+            if (produto.nota.isNotEmpty) ...[
+              const SizedBox(height: 2),
               Text(
                 produto.nota,
                 style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Outfit',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.blue,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+            ],
             if (produto.observacoes.isNotEmpty)
               Text(
                 produto.observacoes,
@@ -437,24 +440,33 @@ class _ProdutoTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              CamdaNumberUtils.formatInt(produto.qtdSistema),
-              style: TextStyle(
-                fontFamily: 'JetBrainsMono',
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: statusColor,
-              ),
-            ),
-            if (produto.temDivergencia)
+            // Qtd em estoque (sistema)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              const Text('Est: ', style: TextStyle(fontFamily: 'JetBrainsMono', fontSize: 9, color: AppColors.textMuted)),
               Text(
-                CamdaNumberUtils.formatDiff(produto.diferenca),
+                CamdaNumberUtils.formatInt(produto.qtdSistema),
                 style: TextStyle(
                   fontFamily: 'JetBrainsMono',
-                  fontSize: 11,
-                  color: statusColor.withOpacity(0.7),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor,
                 ),
               ),
+            ]),
+            // Qtd física (contada)
+            if (produto.temDivergencia)
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Fís: ', style: TextStyle(fontFamily: 'JetBrainsMono', fontSize: 9, color: AppColors.textMuted)),
+                Text(
+                  CamdaNumberUtils.formatInt(produto.qtdFisica),
+                  style: TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor.withOpacity(0.8),
+                  ),
+                ),
+              ]),
             StatusBadge(status: produto.status, compact: true),
           ],
         ),
