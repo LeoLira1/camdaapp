@@ -51,8 +51,8 @@ class _ContagemScreenState extends State<ContagemScreen>
   String _statusDaAba(int index) {
     switch (index) {
       case 0: return 'pendente';
-      case 1: return 'ok';
-      case 2: return 'divergente';
+      case 1: return 'certa';
+      case 2: return 'divergencia';
       default: return 'pendente';
     }
   }
@@ -88,7 +88,7 @@ class _ContagemScreenState extends State<ContagemScreen>
 
   Future<void> _marcarOk(ContagemItem item) async {
     try {
-      await _repo.marcarOk(item.id);
+      await _repo.marcarCerta(item.id, item.codigo, item.qtdEstoque);
       await _loadData();
     } catch (e) {
       _snackError('$e');
@@ -96,18 +96,21 @@ class _ContagemScreenState extends State<ContagemScreen>
   }
 
   Future<void> _marcarDivergente(ContagemItem item) async {
-    int qtdDiv = item.qtdDivergencia;
-    // Pré-preenche com motivo salvo; se vazio, usa a nota do produto (cooperado)
+    // Inicializa: abs da quantidade salva; tipo derivado do sinal (negativo = falta)
+    int qtdDiv = item.qtdDivergencia.abs();
+    String tipoDivergencia = item.qtdDivergencia < 0 ? 'falta' : 'sobra';
     final motivoInicial = item.motivo.isNotEmpty ? item.motivo : item.notaProduto;
     final motivoCtrl = TextEditingController(text: motivoInicial);
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(builder: (ctx, setD) {
+        final isFalta = tipoDivergencia == 'falta';
+        final tipoColor = isFalta ? AppColors.red : AppColors.amber;
+
         return AlertDialog(
           title: Text('Divergência — ${item.produto}', maxLines: 2, overflow: TextOverflow.ellipsis),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            // Exibe nota do produto como referência do cooperado
             if (item.notaProduto.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -129,11 +132,44 @@ class _ContagemScreenState extends State<ContagemScreen>
                   ),
                 ]),
               ),
+            // Seletor Falta / Sobra
             Row(children: [
-              const Text('Diferença:', style: TextStyle(color: AppColors.textSecondary)),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setD(() => tipoDivergencia = 'falta'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isFalta ? AppColors.red.withOpacity(0.18) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: isFalta ? AppColors.red.withOpacity(0.5) : AppColors.surfaceBorder),
+                    ),
+                    child: Center(child: Text('▼ Falta', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isFalta ? AppColors.red : AppColors.textMuted))),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setD(() => tipoDivergencia = 'sobra'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: !isFalta ? AppColors.amber.withOpacity(0.18) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: !isFalta ? AppColors.amber.withOpacity(0.5) : AppColors.surfaceBorder),
+                    ),
+                    child: Center(child: Text('▲ Sobra', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: !isFalta ? AppColors.amber : AppColors.textMuted))),
+                  ),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              const Text('Quantidade:', style: TextStyle(color: AppColors.textSecondary)),
               const Spacer(),
-              IconButton(onPressed: () => setD(() => qtdDiv = (qtdDiv - 1).clamp(-999999, 999999)), icon: const Icon(Icons.remove, size: 18)),
-              Text('$qtdDiv', style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.amber)),
+              IconButton(onPressed: () => setD(() => qtdDiv = (qtdDiv - 1).clamp(0, 999999)), icon: const Icon(Icons.remove, size: 18)),
+              Text('$qtdDiv', style: TextStyle(fontFamily: 'JetBrainsMono', fontSize: 18, fontWeight: FontWeight.w700, color: tipoColor)),
               IconButton(onPressed: () => setD(() => qtdDiv++), icon: const Icon(Icons.add, size: 18)),
             ]),
             const SizedBox(height: 8),
@@ -149,7 +185,10 @@ class _ContagemScreenState extends State<ContagemScreen>
               onPressed: () async {
                 Navigator.pop(ctx);
                 try {
-                  await _repo.marcarDivergente(item.id, qtdDiv, motivoCtrl.text.trim());
+                  await _repo.marcarDivergencia(
+                    item.id, item.codigo, item.qtdEstoque,
+                    qtdDiv, motivoCtrl.text.trim(), tipoDivergencia,
+                  );
                   await _loadData();
                 } catch (e) { _snackError('$e'); }
               },
@@ -371,7 +410,7 @@ class _ContagemScreenState extends State<ContagemScreen>
       return lw.EmptyWidget(
         message: _filtroStatus == 'pendente'
             ? 'Nenhum item pendente!'
-            : _filtroStatus == 'ok'
+            : _filtroStatus == 'certa'
                 ? 'Nenhum item marcado como OK ainda.'
                 : 'Nenhuma divergência registrada.',
         icon: _filtroStatus == 'ok' ? Icons.check_circle_outline : Icons.inventory_2_outlined,
@@ -421,8 +460,8 @@ class _ContagemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     Color borderColor;
     switch (item.status) {
-      case 'ok': borderColor = AppColors.green; break;
-      case 'divergente': borderColor = AppColors.amber; break;
+      case 'certa': borderColor = AppColors.green; break;
+      case 'divergencia': borderColor = AppColors.amber; break;
       default: borderColor = AppColors.surfaceBorder;
     }
 

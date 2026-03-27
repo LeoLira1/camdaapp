@@ -6,7 +6,7 @@ class ContagemItem {
   final String produto;
   final String categoria;
   final int qtdEstoque;
-  final String status;      // 'pendente' | 'ok' | 'divergente'
+  final String status;      // 'pendente' | 'certa' | 'divergencia'
   final String motivo;
   final int qtdDivergencia;
   final String registradoEm;
@@ -28,8 +28,8 @@ class ContagemItem {
   });
 
   bool get isPendente => status == 'pendente';
-  bool get isOk => status == 'ok';
-  bool get isDivergente => status == 'divergente';
+  bool get isOk => status == 'certa';
+  bool get isDivergente => status == 'divergencia';
 
   factory ContagemItem.fromMap(Map<String, dynamic> map) {
     return ContagemItem(
