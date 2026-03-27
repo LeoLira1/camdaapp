@@ -13,13 +13,28 @@ class ContagemRepository {
   Future<List<ContagemItem>> getAll() async {
     try {
       final result = await _client.query('''
+        WITH last_div AS (
+          SELECT UPPER(TRIM(codigo)) AS cod,
+                 cooperado,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY UPPER(TRIM(codigo))
+                   ORDER BY criado_em DESC
+                 ) AS rn
+          FROM divergencias
+        )
         SELECT ci.id, ci.upload_id, ci.codigo, ci.produto, ci.categoria, ci.qtd_estoque,
                ci.status, COALESCE(ci.motivo,'') as motivo,
                COALESCE(ci.qtd_divergencia, 0) as qtd_divergencia, ci.registrado_em,
-               COALESCE(NULLIF(TRIM(em.observacoes),''), NULLIF(TRIM(em.nota),''), '') as nota_produto
+               COALESCE(
+                 NULLIF(TRIM(em.observacoes),''),
+                 NULLIF(TRIM(em.nota),''),
+                 ld.cooperado,
+                 ''
+               ) as nota_produto
         FROM contagem_itens ci
         LEFT JOIN estoque_mestre em ON UPPER(TRIM(em.codigo)) = UPPER(TRIM(ci.codigo))
-        ORDER BY ci.produto ASC
+        LEFT JOIN last_div ld ON ld.cod = UPPER(TRIM(ci.codigo)) AND ld.rn = 1
+        ORDER BY ci.categoria, ci.produto ASC
       ''');
       if (result.hasError) throw TursoException(result.error!);
       final rows = result.toMaps();

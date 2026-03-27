@@ -413,26 +413,59 @@ class _ContagemScreenState extends State<ContagemScreen>
             : _filtroStatus == 'certa'
                 ? 'Nenhum item marcado como OK ainda.'
                 : 'Nenhuma divergência registrada.',
-        icon: _filtroStatus == 'ok' ? Icons.check_circle_outline : Icons.inventory_2_outlined,
+        icon: _filtroStatus == 'certa' ? Icons.check_circle_outline : Icons.inventory_2_outlined,
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
-      itemBuilder: (context, i) {
-        final item = items[i];
-        return _ContagemTile(
-          item: item,
-          showOkBtn: showOkBtn,
-          showDivBtn: showDivBtn,
-          showResetBtn: showResetBtn,
-          onOk: () => _marcarOk(item),
-          onDiv: () => _marcarDivergente(item),
-          onReset: () => _resetar(item),
-        ).animate().fadeIn(duration: 200.ms, delay: (i * 15).clamp(0, 300).ms);
-      },
+    // Agrupa por categoria (igual ao dashboard Streamlit)
+    final Map<String, List<ContagemItem>> porCategoria = {};
+    for (final item in items) {
+      porCategoria.putIfAbsent(item.categoria, () => []).add(item);
+    }
+    final categorias = porCategoria.keys.toList()..sort();
+
+    final widgets = <Widget>[];
+    var globalIdx = 0;
+    for (final cat in categorias) {
+      final catItems = porCategoria[cat]!;
+      // Cabeçalho de categoria
+      widgets.add(Padding(
+        padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+        child: Row(children: [
+          Text(
+            cat.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w700,
+              letterSpacing: 1.2, color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '(${catItems.length})',
+            style: const TextStyle(fontSize: 10, color: AppColors.textDisabled),
+          ),
+        ]),
+      ));
+      for (final item in catItems) {
+        final idx = globalIdx++;
+        widgets.add(
+          _ContagemTile(
+            item: item,
+            showOkBtn: showOkBtn,
+            showDivBtn: showDivBtn,
+            showResetBtn: showResetBtn,
+            onOk: () => _marcarOk(item),
+            onDiv: () => _marcarDivergente(item),
+            onReset: () => _resetar(item),
+          ).animate().fadeIn(duration: 200.ms, delay: (idx * 15).clamp(0, 300).ms),
+        );
+        widgets.add(const SizedBox(height: 6));
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+      children: widgets,
     );
   }
 }
