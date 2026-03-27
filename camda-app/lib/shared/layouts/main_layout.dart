@@ -11,6 +11,7 @@ import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/lancamentos/lancamentos_screen.dart';
 import '../../features/contagem/contagem_screen.dart';
 import '../../features/pendencias/pendencias_screen.dart';
+import '../../features/divergencias/divergencias_screen.dart';
 
 /// Layout principal com navegação adaptativa:
 /// - Mobile (< 600px): BottomNavigationBar (4 fixas + "Mais")
@@ -34,17 +35,19 @@ class _MainLayoutState extends State<MainLayout> {
     LancamentosScreen(),
     ContagemScreen(),
     PendenciasScreen(),
+    DivergenciasScreen(),
   ];
 
   static const _allItems = [
-    _NavItem(icon: Icons.dashboard_outlined,      activeIcon: Icons.dashboard,      label: 'Dashboard'),
-    _NavItem(icon: Icons.inventory_2_outlined,    activeIcon: Icons.inventory_2,    label: 'Estoque'),
-    _NavItem(icon: Icons.warning_amber_outlined,  activeIcon: Icons.warning_amber,  label: 'Avarias'),
-    _NavItem(icon: Icons.event_outlined,          activeIcon: Icons.event,          label: 'Validade'),
-    _NavItem(icon: Icons.store_outlined,          activeIcon: Icons.store,          label: 'Reposição'),
-    _NavItem(icon: Icons.receipt_long_outlined,   activeIcon: Icons.receipt_long,   label: 'Lançamentos'),
-    _NavItem(icon: Icons.fact_check_outlined,     activeIcon: Icons.fact_check,     label: 'Contagem'),
-    _NavItem(icon: Icons.photo_library_outlined,  activeIcon: Icons.photo_library,  label: 'Pendências'),
+    _NavItem(icon: Icons.dashboard_outlined,         activeIcon: Icons.dashboard,         label: 'Dashboard'),
+    _NavItem(icon: Icons.inventory_2_outlined,       activeIcon: Icons.inventory_2,       label: 'Estoque'),
+    _NavItem(icon: Icons.warning_amber_outlined,     activeIcon: Icons.warning_amber,     label: 'Avarias'),
+    _NavItem(icon: Icons.event_outlined,             activeIcon: Icons.event,             label: 'Validade'),
+    _NavItem(icon: Icons.store_outlined,             activeIcon: Icons.store,             label: 'Reposição'),
+    _NavItem(icon: Icons.receipt_long_outlined,      activeIcon: Icons.receipt_long,      label: 'Lançamentos'),
+    _NavItem(icon: Icons.fact_check_outlined,        activeIcon: Icons.fact_check,        label: 'Contagem'),
+    _NavItem(icon: Icons.photo_library_outlined,     activeIcon: Icons.photo_library,     label: 'Pendências'),
+    _NavItem(icon: Icons.rule_folder_outlined,       activeIcon: Icons.rule_folder,       label: 'Divergências'),
   ];
 
   // Índices que aparecem diretamente no BottomNav (mobile)
