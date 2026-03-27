@@ -23,12 +23,11 @@ class EstoqueRepository {
       SELECT codigo, produto, categoria, qtd_sistema, qtd_fisica,
              diferenca, nota,
              CASE
-               WHEN status IN ('falta', 'sobra') THEN status
+               WHEN diferenca < 0 THEN 'falta'
+               WHEN diferenca > 0 THEN 'sobra'
                WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'falta') THEN 'falta'
                WHEN codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'sobra') THEN 'sobra'
-               WHEN codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia < 0) THEN 'falta'
-               WHEN codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia > 0) THEN 'sobra'
-               ELSE status
+               ELSE 'ok'
              END as status,
              ultima_contagem, criado_em,
              COALESCE(observacoes, '') as observacoes
@@ -42,13 +41,12 @@ class EstoqueRepository {
       args.add(categoria);
     }
     if (status != null && status.isNotEmpty) {
-      // Inclui produtos com status direto OU registro em divergencias OU
-      // divergência registrada na contagem (qtd_divergencia > 0 = sobra, < 0 = falta)
-      final qtdSign = status == 'sobra' ? '> 0' : '< 0';
+      // Falta: diferenca < 0 OU entrada ativa em divergencias com status='falta'
+      // Sobra: diferenca > 0 OU entrada ativa em divergencias com status='sobra'
+      final diferencaOp = status == 'sobra' ? '> 0' : '< 0';
       conditions.add(
-        "(status = ? OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = ?) OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia $qtdSign))"
+        "(diferenca $diferencaOp OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = ?))"
       );
-      args.add(status);
       args.add(status);
     }
     if (_produtosIgnorados.isNotEmpty) {
@@ -125,16 +123,16 @@ class EstoqueRepository {
       final result = await _client.query('''
           SELECT
             COUNT(*) as total,
-            SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) as ok,
             SUM(qtd_sistema) as total_itens,
-            SUM(CASE WHEN status = 'falta'
+            SUM(CASE WHEN diferenca < 0
                           OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'falta')
-                          OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia < 0)
                      THEN 1 ELSE 0 END) as faltas,
-            SUM(CASE WHEN status = 'sobra'
+            SUM(CASE WHEN diferenca > 0
                           OR codigo IN (SELECT DISTINCT codigo FROM divergencias WHERE status = 'sobra')
-                          OR codigo IN (SELECT DISTINCT codigo FROM contagem_itens WHERE status = 'divergente' AND qtd_divergencia > 0)
-                     THEN 1 ELSE 0 END) as sobras
+                     THEN 1 ELSE 0 END) as sobras,
+            SUM(CASE WHEN diferenca = 0
+                          AND codigo NOT IN (SELECT DISTINCT codigo FROM divergencias)
+                     THEN 1 ELSE 0 END) as ok
           FROM estoque_mestre
           $whereClause
         ''', [..._produtosIgnorados]);

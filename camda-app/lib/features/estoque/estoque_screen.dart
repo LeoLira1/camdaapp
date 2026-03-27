@@ -345,7 +345,7 @@ class _ProdutoTile extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: produto.temDivergencia
+          color: produto.diferenca != 0
               ? statusColor.withOpacity(0.3)
               : Theme.of(context).colorScheme.outline,
         ),
@@ -409,31 +409,21 @@ class _ProdutoTile extends StatelessWidget {
                 ),
               ],
             ]),
-            if (produto.nota.isNotEmpty) ...[
+            if (produto.nota.isNotEmpty || produto.observacoes.isNotEmpty) ...[
               const SizedBox(height: 2),
               Text(
-                produto.nota,
+                [if (produto.nota.isNotEmpty) produto.nota,
+                 if (produto.observacoes.isNotEmpty && produto.observacoes != produto.nota) produto.observacoes]
+                    .join(' · '),
                 style: const TextStyle(
-                  fontFamily: 'Outfit',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.blue,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            if (produto.observacoes.isNotEmpty)
-              Text(
-                produto.observacoes,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textDisabled,
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
                   fontStyle: FontStyle.italic,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+            ],
           ],
         ),
         trailing: Column(
@@ -453,8 +443,8 @@ class _ProdutoTile extends StatelessWidget {
                 ),
               ),
             ]),
-            // Qtd física (contada)
-            if (produto.temDivergencia)
+            // Qtd física (contada) — só exibe se diferenca != 0
+            if (produto.diferenca != 0)
               Row(mainAxisSize: MainAxisSize.min, children: [
                 const Text('Fís: ', style: TextStyle(fontFamily: 'JetBrainsMono', fontSize: 9, color: AppColors.textMuted)),
                 Text(
