@@ -52,12 +52,16 @@ class ContagemRepository {
   }
 
   /// Marca item como certa (contagem confere).
-  /// Executa transação: atualiza contagem_itens + reseta estoque_mestre se havia divergência.
+  /// Executa transação: atualiza contagem_itens + reseta estoque_mestre + remove divergências do produto.
   Future<void> marcarCerta(int id, String codigo, int qtdSistema) async {
     final now = _nowBRT();
     if (!ConnectivityService.isOnline) {
       const sql = "UPDATE contagem_itens SET status='certa', qtd_divergencia=0, motivo='' WHERE id=?";
       await SyncQueueService.enqueue(sql, [id]);
+      await SyncQueueService.enqueue(
+        "DELETE FROM divergencias WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))",
+        [codigo],
+      );
       await CacheService.updateContagemItem(id, status: 'certa', qtdDivergencia: 0, motivo: '');
       return;
     }
@@ -69,6 +73,10 @@ class ContagemRepository {
       TursoQuery(
         sql: "UPDATE estoque_mestre SET status='ok', qtd_fisica=qtd_sistema, diferenca=0, nota='', ultima_contagem=? WHERE codigo=? AND status IN ('falta','sobra')",
         args: [now, codigo],
+      ),
+      TursoQuery(
+        sql: "DELETE FROM divergencias WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))",
+        args: [codigo],
       ),
     ]);
   }
