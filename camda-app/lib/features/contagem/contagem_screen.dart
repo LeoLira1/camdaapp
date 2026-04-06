@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/utils/number_utils.dart';
+import '../../core/services/connectivity_service.dart';
 import '../../data/models/contagem_item.dart';
 import '../../data/repositories/contagem_repository.dart';
 import '../../shared/widgets/loading_widget.dart' as lw;
@@ -183,14 +184,11 @@ class _ContagemScreenState extends State<ContagemScreen>
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
+                final qtdFinal = qtdDiv;
+                final tipoFinal = tipoDivergencia;
+                final motivoFinal = motivoCtrl.text.trim();
                 Navigator.pop(ctx);
-                try {
-                  await _repo.marcarDivergencia(
-                    item.id, item.codigo, item.qtdEstoque,
-                    qtdDiv, motivoCtrl.text.trim(), tipoDivergencia,
-                  );
-                  await _loadData();
-                } catch (e) { _snackError('$e'); }
+                await _salvarDivergencia(item, qtdFinal, tipoFinal, motivoFinal);
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.background),
               child: const Text('Salvar'),
@@ -198,6 +196,124 @@ class _ContagemScreenState extends State<ContagemScreen>
           ],
         );
       }),
+    );
+  }
+
+  Future<void> _salvarDivergencia(
+    ContagemItem item,
+    int qtdDiv,
+    String tipoDivergencia,
+    String motivo,
+  ) async {
+    try {
+      if (ConnectivityService.isOnline) {
+        final existentes = await _repo.getDivergenciasParaCodigo(item.codigo);
+        if (existentes.isNotEmpty) {
+          if (!mounted) return;
+          await _showDesambiguacaoDialog(item, qtdDiv, tipoDivergencia, motivo, existentes);
+          return;
+        }
+      }
+      await _repo.marcarDivergencia(item.id, item.codigo, item.qtdEstoque, qtdDiv, motivo, tipoDivergencia);
+      await _loadData();
+    } catch (e) {
+      _snackError('$e');
+    }
+  }
+
+  Future<void> _showDesambiguacaoDialog(
+    ContagemItem item,
+    int qtdDiv,
+    String tipoDivergencia,
+    String motivo,
+    List<DivergenciaExistente> existentes,
+  ) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Divergência já registrada'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          ...existentes.map((div) {
+            final isFalta = div.delta < 0;
+            final qtdAbs = div.delta.abs();
+            final tipoLabel = isFalta ? 'falta' : 'sobra';
+            final tipoColor = isFalta ? AppColors.red : AppColors.amber;
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.blue.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.blue.withOpacity(0.25)),
+              ),
+              child: Row(children: [
+                const Icon(Icons.person_outline, size: 14, color: AppColors.blue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    div.cooperado,
+                    style: const TextStyle(fontSize: 12, color: AppColors.blue, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text(
+                  '$qtdAbs ($tipoLabel)',
+                  style: TextStyle(fontSize: 12, color: tipoColor, fontWeight: FontWeight.w700),
+                ),
+              ]),
+            );
+          }),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.amber.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.amber.withOpacity(0.25)),
+            ),
+            child: Text(
+              'Contagem atual: $qtdDiv ($tipoDivergencia)',
+              style: const TextStyle(fontSize: 12, color: AppColors.amber, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Confirmar: não cria novo registro. Adicionar: registra divergência adicional.',
+            style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _repo.marcarDivergenteConfirmar(
+                  item.id, item.codigo, item.qtdEstoque, qtdDiv, motivo, tipoDivergencia,
+                );
+                await _loadData();
+              } catch (e) { _snackError('$e'); }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.blue, foregroundColor: AppColors.background),
+            child: const Text('Confirmar existente'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await _repo.marcarDivergencia(
+                  item.id, item.codigo, item.qtdEstoque, qtdDiv, motivo, tipoDivergencia,
+                );
+                await _loadData();
+              } catch (e) { _snackError('$e'); }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.amber, foregroundColor: AppColors.background),
+            child: const Text('Adicionar nova divergência'),
+          ),
+        ],
+      ),
     );
   }
 

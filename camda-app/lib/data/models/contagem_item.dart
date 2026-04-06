@@ -54,3 +54,34 @@ class ContagemItem {
     return int.tryParse(v.toString()) ?? 0;
   }
 }
+
+/// Representa uma divergência já registrada na tabela `divergencias`.
+class DivergenciaExistente {
+  final int id;
+  final String cooperado;
+  final int delta; // negativo = falta, positivo = sobra
+  final String status; // 'falta' | 'sobra'
+
+  const DivergenciaExistente({
+    required this.id,
+    required this.cooperado,
+    required this.delta,
+    required this.status,
+  });
+
+  factory DivergenciaExistente.fromMap(Map<String, dynamic> map) {
+    return DivergenciaExistente(
+      id: _toInt(map['id']),
+      cooperado: map['cooperado']?.toString() ?? '',
+      delta: _toInt(map['delta']),
+      status: map['status']?.toString() ?? '',
+    );
+  }
+
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+}
