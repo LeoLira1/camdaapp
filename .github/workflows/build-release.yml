@@ -2,6 +2,10 @@ name: Build & Release APK
 
 on:
   push:
+    branches:
+      - work
+      - main
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
@@ -51,10 +55,24 @@ jobs:
         working-directory: camda-app
         run: flutter build apk --release --split-per-abi
 
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="vauto-$(date -u +%Y%m%d-%H%M)-${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Release version: ${VERSION}"
+
       - name: Rename APKs
         working-directory: camda-app
         run: |
-          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          VERSION="${{ steps.version.outputs.version }}"
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk  dist/camda-app-${VERSION}-arm64.apk
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist/camda-app-${VERSION}-arm32.apk
@@ -63,10 +81,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "${{ github.event.inputs.version || github.ref_name }}"
-          name: "CAMDA App ${{ github.event.inputs.version || github.ref_name }}"
+          tag_name: "${{ steps.version.outputs.version }}"
+          target_commitish: "${{ github.sha }}"
+          name: "CAMDA App ${{ steps.version.outputs.version }}"
           body: |
-            ## CAMDA Estoque ${{ github.ref_name }}
+            ## CAMDA Estoque ${{ steps.version.outputs.version }}
 
             ### Download
             - **arm64-v8a** — Celulares modernos (recomendado para a maioria dos Android)
