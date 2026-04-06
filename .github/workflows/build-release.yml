@@ -98,6 +98,8 @@ jobs:
             - **armeabi-v7a** — Celulares mais antigos (32-bit)
 
             ### Novidades nesta versão
+            - Fix: evita duplicação de divergências ao confirmar contagem física
+            - Dialog de desambiguação ao salvar divergência com registro existente
             - Sincronização completa com banco de dados Turso
             - Suporte offline para todos os módulos (estoque, validade, vendas, lançamentos, pendências)
             - Fila de sincronização automática ao reconectar
