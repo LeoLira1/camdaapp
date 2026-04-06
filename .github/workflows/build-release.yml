@@ -92,8 +92,6 @@ jobs:
           name: "CAMDA App ${{ steps.version.outputs.version }}"
           body: |
             ## CAMDA Estoque ${{ steps.version.outputs.version }}
-            - Branch: `${{ github.ref_name }}`
-            - Commit: `${{ github.sha }}`
 
             ### Download
             - **arm64-v8a** — Celulares modernos (recomendado para a maioria dos Android)
