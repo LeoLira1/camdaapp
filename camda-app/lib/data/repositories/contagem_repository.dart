@@ -126,6 +126,56 @@ class ContagemRepository {
     ]);
   }
 
+  /// Retorna divergências ativas para o código de produto informado.
+  Future<List<DivergenciaExistente>> getDivergenciasParaCodigo(String codigo) async {
+    final result = await _client.query(
+      "SELECT id, cooperado, delta, status FROM divergencias WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))",
+      [codigo],
+    );
+    if (result.hasError) throw TursoException(result.error!);
+    return result.toMaps().map(DivergenciaExistente.fromMap).toList();
+  }
+
+  /// Confirma divergência existente: atualiza contagem_itens + estoque_mestre + historico_divergencias.
+  /// NÃO insere em divergencias (a divergência já existe).
+  Future<void> marcarDivergenteConfirmar(
+    int id,
+    String codigo,
+    int qtdSistema,
+    int qtdDivergencia,
+    String motivo,
+    String tipoDivergencia,
+  ) async {
+    final now = _nowBRT();
+    final qtdFisica = tipoDivergencia == 'sobra'
+        ? qtdSistema + qtdDivergencia
+        : (qtdSistema - qtdDivergencia).clamp(0, 999999);
+    final diferenca = qtdFisica - qtdSistema;
+    final delta = tipoDivergencia == 'sobra' ? qtdDivergencia : -qtdDivergencia;
+
+    if (!ConnectivityService.isOnline) {
+      const sql = "UPDATE contagem_itens SET status='divergencia', qtd_divergencia=?, motivo=? WHERE id=?";
+      await SyncQueueService.enqueue(sql, [qtdDivergencia, motivo.trim(), id]);
+      await CacheService.updateContagemItem(id,
+          status: 'divergencia', qtdDivergencia: qtdDivergencia, motivo: motivo.trim());
+      return;
+    }
+    await _client.transaction([
+      TursoQuery(
+        sql: "UPDATE contagem_itens SET status='divergencia', motivo=?, qtd_divergencia=? WHERE id=?",
+        args: [motivo.trim(), qtdDivergencia, id],
+      ),
+      TursoQuery(
+        sql: "UPDATE estoque_mestre SET status=?, qtd_fisica=?, diferenca=?, nota=?, observacoes=?, ultima_contagem=? WHERE codigo=?",
+        args: [tipoDivergencia, qtdFisica, diferenca, motivo.trim(), motivo.trim(), now, codigo],
+      ),
+      TursoQuery(
+        sql: "INSERT INTO historico_divergencias (codigo, produto, categoria, cooperado, delta, status, criado_em) SELECT ?, produto, categoria, ?, ?, ?, ? FROM estoque_mestre WHERE codigo=?",
+        args: [codigo, motivo.trim(), delta, tipoDivergencia, now, codigo],
+      ),
+    ]);
+  }
+
   /// Reseta item para pendente.
   Future<void> resetar(int id) async {
     const sql = "UPDATE contagem_itens SET status='pendente', qtd_divergencia=0, motivo='' WHERE id=?";
