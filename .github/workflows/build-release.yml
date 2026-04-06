@@ -70,7 +70,7 @@ jobs:
           elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION="vauto-$(date -u +%Y%m%d-%H%M)-${GITHUB_SHA::7}"
+            VERSION="vauto-$(date -u +%Y%m%d-%H%M)-${GITHUB_RUN_NUMBER}"
           fi
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "Release version: ${VERSION}"
