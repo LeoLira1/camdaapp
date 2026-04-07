@@ -208,7 +208,11 @@ class _ContagemScreenState extends State<ContagemScreen>
     try {
       if (ConnectivityService.isOnline) {
         final existentes = await _repo.getDivergenciasParaCodigo(item.codigo);
-        if (existentes.isNotEmpty) {
+        // Mostra desambiguação se há divergências ativas OU se o produto já
+        // tem cooperado associado (badge visível = observacoes/nota preenchidos).
+        final deveDesambiguar =
+            existentes.isNotEmpty || item.notaProduto.isNotEmpty;
+        if (deveDesambiguar) {
           if (!mounted) return;
           await _showDesambiguacaoDialog(item, qtdDiv, tipoDivergencia, motivo, existentes);
           return;
